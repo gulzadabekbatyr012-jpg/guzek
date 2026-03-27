@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cabana Booking by Gulzada</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <style>
+        /* Основные премиальные цвета Lujo */
+        :root {
+            --lujo-orange: #FF8F6B; /* Цвет кнопки с макета */
+            --lujo-dark: #101010;
+            --white: #ffffff;
+            /* Цвета статусов (яркие для контраста на фоне) */
+            --status-free: #2ecc71; /* Зеленый */
+            --status-booked: #e74c3c; /* Красный */
+            --status-comp: #f1c40f; /* Желтый */
+            --status-event: #3498db; /* Синий */
+            --status-villa: #9b59b6; /* Фиолетовый */
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--lujo-dark);
+            color: var(--white);
+            overflow: hidden; /* Основная страница не скроллится */
+        }
+
+        /* --- СТРАНИЦА 1: ПРИВЕТСТВИЕ (Как на макете Tilda) --- */
+        #page-welcome {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            /* Задний фон - твое премиум фото пляжа */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url('https://gulzadabekbatyr012-jpg.github.io/guzek/lujo-beach.jpg');
+            background-size: cover;
+            background-position: center;
+            z-index: 10;
+            transition: transform 0.5s ease-out;
+        }
+
+        #page-welcome.hidden {
+            transform: translateY(-100%); /* Уезжает вверх */
+        }
+
+        .welcome-tag {
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 15px;
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.2;
+            max-width: 80%;
+            margin-bottom: 40px;
+        }
+
+        .welcome-status-legend {
+            font-size: 14px;
+            text-align: left;
+            margin-bottom: 60px;
+            line-height: 1.8;
+            opacity: 0.9;
+        }
+
+        .welcome-status-legend span {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Кнопка как на макете Tilda */
+        .btn-choose-zone {
+            background-color: var(--lujo-orange);
+            color: var(--lujo-dark);
+            border: none;
+            padding: 18px 35px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 143, 107, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* --- СТРАНИЦА 2: ВЫБОР ЗОНЫ --- */
+        #page-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--lujo-dark);
+            opacity: 0;
+            z-index: 5;
+            transition: opacity 0.5s ease-out;
+            pointer-events: none;
+        }
+
+        #page-zones.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .zone-menu-title {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+            color: var(--lujo-orange);
+        }
+
+        .zone-btn {
+            background-color: transparent;
+            color: var(--white);
+            border: 1px solid #333;
+            width: 80%;
+            max-width: 300px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+        }
+
+        .zone-btn:active { background-color: #1a1a1a; }
+        .zone-btn::after { content: '→'; position: absolute; right: 20px; color: var(--lujo-orange); }
+
+        /* --- СТРАНИЦА 3: СЕТКА КАБАН (Попап) --- */
+        .popup-grid {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--lujo-dark);
+            z-index: 100;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 15px;
+        }
+
+        .popup-header h2 { margin: 0; font-size: 20px; letter-spacing: 2px; color: var(--lujo-orange); }
+        .btn-back { font-size: 24px; color: #555; cursor: pointer; background: none; border: none; }
+
+        /* Сетки */
+        .grid { display: grid; gap: 10px; width: 100%; }
+        .grid-escape { grid-template-columns: repeat(3, 1fr); } 
+        .grid-lotus { grid-template-columns: repeat(2, 1fr); }
+        .grid-joystone { grid-template-columns: repeat(3, 1fr); }
+
+        /* --- КАРТОЧКА КАБАНЫ (Расширенная, данные видны сразу) --- */
+        .cabana-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 90px; /* Увеличили высоту, чтобы влезло больше текста */
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Полоска статуса сверху */
+        .cabana-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .cabana-id { font-size: 16px; font-weight: 800; color: var(--white); }
+        .cabana-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* Основные данные - ВИДНЫ СРАЗУ */
+        .cabana-main-info {
+            font-size: 11px;
+            line-height: 1.3;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .cabana-main-info b { color: var(--white); font-weight: 600; }
+        .info-guest { font-size: 12px; margin-bottom: 3px; }
+
+        /* Тип питания (BB/AI) - яркий акцент */
+        .info-board-type {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Применяем цвета статуса к фону карточки */
+        .card-free { border-color: var(--status-free); }
+        .card-booked { border-color: var(--status-booked); background: rgba(231, 76, 60, 0.1); }
+        .card-comp { border-color: var(--status-comp); background: rgba(241, 196, 15, 0.1); }
+        .card-event { border-color: var(--status-event); background: rgba(52, 152, 219, 0.1); }
+        .card-villa { border-color: var(--status-villa); background: rgba(155, 89, 182, 0.1); }
+
+        /* --- ОКНО РЕДАКТИРОВАНИЯ (Снизу как в iOS) --- */
+        .edit-sheet {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: white;
+            color: black;
+            border-radius: 20px 20px 0 0;
+            padding: 30px;
+            box-sizing: border-box;
+            z-index: 2000;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+        }
+
+        .edit-sheet.active { display: block; transform: translateY(0); }
+
+        .edit-sheet h3 { margin: 0 0 20px 0; letter-spacing: 1px; color: var(--lujo-dark); }
+
+        label { display: block; font-size: 11px; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: 700; margin-top: 10px;}
+        input, select, textarea {
+            width: 100%; padding: 15px; margin-bottom: 5px;
+            border: 1px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box;
+            background: #f9f9f9;
+        }
+
+        /* Специфичные поля для Room и Board side-by-side */
+        .row-inputs { display: flex; gap: 10px; }
+        .row-inputs div { flex: 1; }
+
+        .btn-save {
+            background: var(--lujo-orange);
+            color: var(--lujo-dark); border: none; width: 100%; padding: 18px;
+            border-radius: 10px; font-weight: 800; text-transform: uppercase; margin-top: 20px;
+        }
+
+        /* Десктопная адаптация сеток */
+        @media (min-width: 768px) {
+            .grid-escape { grid-template-columns: repeat(7, 1fr); }
+            .grid-lotus { grid-template-columns: repeat(4, 1fr); }
+            .grid-joystone { grid-template-columns: repeat(6, 1fr); }
+            .cabana-card { min-height: 110px; }
+            .cabana-main-info { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="page-welcome">
+        <div class="welcome-tag">Cabanas Reservation</div>
+        <div class="welcome-title">Cabana Booking by Gulzada</div>
+        
+        <div class="welcome-status-legend">
+            <div><span style="background:var(--status-free)"></span>Free — Green</div>
+            <div><span style="background:var(--status-booked)"></span>Booked — Red</div>
+            <div><span style="background:var(--status-comp)"></span>Complimentary — Yellow</div>
+            <div><span style="background:var(--status-event)"></span>Event — Blue</div>
+        </div>
+
+        <button class="btn-choose-zone" onclick="showZonesPage()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            Choose your cabana zone
+        </button>
+    </div>
+
+    <div id="page-zones">
+        <div class="zone-menu-title">Select Zone</div>
+        <button class="zone-btn" onclick="openGrid('escape')">Escape</button>
+        <button class="zone-btn" onclick="openGrid('lotus')">Lotus</button>
+        <button class="zone-btn" onclick="openGrid('joystone')">JoyStone</button>
+        <button onclick="backToWelcome()" style="background:none; border:none; color:#555; margin-top:30px;">← Back</button>
+    </div>
+
+    <div id="pop-escape" class="popup-grid">
+        <div class="popup-header"><button class="btn-back" onclick="closeGrid('escape')">←</button><h2>ESCAPE</h2><div style="width:24px"></div></div>
+        <div id="grid-escape" class="grid grid-escape"></div>
+    </div>
+
+    <div id="pop-lotus" class="popup-grid">
+        <div class="popup-header"><button class="btn-back" onclick="closeGrid('lotus')">←</button><h2>LOTUS</h2><div style="width:24px"></div></div>
+        <div id="grid-lotus" class="grid grid-lotus"></div>
+    </div>
+
+    <div id="pop-joystone" class="popup-grid">
+        <div class="popup-header"><button class="btn-back" onclick="closeGrid('joystone')">←</button><h2>JOYSTONE</h2><div style="width:24px"></div></div>
+        <div id="grid-joystone" class="grid grid-joystone"></div>
+    </div>
+
+    <div id="editSheet" class="edit-sheet">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="editTitle">Cabana</h3>
+            <button onclick="closeEdit()" style="background:none; border:none; color:gray; font-size:20px;">✕</button>
+        </div>
+        
+        <label>Status</label>
+        <select id="f-status">
+            <option value="free">FREE (Green)</option>
+            <option value="booked">BOOKED (Red)</option>
+            <option value="complimentary">COMPLIMENTARY (Yellow)</option>
+            <option value="event">EVENT (Blue)</option>
+            <option value="villa">VILLA (Purple)</option>
+        </select>
+
+        <label>Guest Name</label>
+        <input type="text" id="f-guest" placeholder="Name & Surname">
+
+        <div class="row-inputs">
+            <div>
+                <label>Room Number</label>
+                <input type="text" id="f-room" placeholder="e.g., 2101">
+            </div>
+            <div>
+                <label>Board Basis</label>
+                <select id="f-board">
+                    <option value="-">-</option>
+                    <option value="BB">BB</option>
+                    <option value="AI">All Inclusive</option>
+                </select>
+            </div>
+        </div>
+
+        <label>Seller / Comment</label>
+        <textarea id="f-comment" rows="2" placeholder="Who sold? Notes..."></textarea>
+
+        <button class="btn-save" onclick="saveToCloud()">Save Changes</button>
+    </div>
+
+    <script>
+        // ТВОЯ КОНФИГУРАЦИЯ FIREBASE (Уже вставлена из прошлых шагов)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDrebkLoBp6dAvC8W1G6p-fM5Y7R_vF8o",
+            authDomain: "cabana-booking-by-gulzada.firebaseapp.com",
+            databaseURL: "https://cabana-booking-by-gulzada-default-rtdb.firebaseio.com",
+            projectId: "cabana-booking-by-gulzada",
+            storageBucket: "cabana-booking-by-gulzada.appspot.com",
+            messagingSenderId: "646841996570",
+            appId: "1:646841996570:web:b056e4c73df5607374b374"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let activeCabanaId = null;
+        let cabanasState = {};
+
+        // --- ЛОГИКА НАВИГАЦИИ (Анимации как просила) ---
+        function showZonesPage() {
+            document.getElementById('page-welcome').classList.add('hidden');
+            document.getElementById('page-zones').classList.add('active');
+        }
+
+        function backToWelcome() {
+            document.getElementById('page-welcome').classList.remove('hidden');
+            document.getElementById('page-zones').classList.remove('active');
+        }
+
+        function openGrid(zone) { document.getElementById('pop-'+zone).style.display = 'block'; }
+        function closeGrid(zone) { document.getElementById('pop-'+zone).style.display = 'none'; }
+
+        // --- ЛОГИКА СЕТКИ ---
+        function init() {
+            build('grid-escape', 21, 'E');
+            build('grid-lotus', 8, 'L');
+            build('grid-joystone', 18, 'J');
+        }
+
+        function build(gridId, count, prefix) {
+            const container = document.getElementById(gridId);
+            for(let i=1; i<=count; i++) {
+                const id = prefix+i;
+                const card = document.createElement('div');
+                card.id = 'c-'+id;
+                card.className = 'cabana-card card-free'; // Дефолт
+                card.onclick = () => openEdit(id);
+                
+                // ШАБЛОН КАРТОЧКИ - ДАННЫЕ ВИДНЫ СРАЗУ
+                card.innerHTML = `
+                    <div class="cabana-meta">
+                        <div class="cabana-id">${id}</div>
+                        <div id="dot-${id}" class="cabana-status-dot" style="background:var(--status-free)"></div>
+                    </div>
+                    <div class="cabana-main-info">
+                        <div id="g-${id}" class="info-guest">-</div>
+                        <div>Room: <b id="r-${id}">-</b></div>
+                    </div>
+                    <div id="b-${id}" class="info-board-type">-</div>
+                `;
+                container.appendChild(card);
+                cabanasState[id] = { status: 'free', guest: '', room: '', board: '', comment: '' };
+            }
+        }
+
+        // --- ЛОГИКА РЕДАКТИРОВАНИЯ ---
+        function openEdit(id) {
+            activeCabanaId = id;
+            const data = cabanasState[id];
+            document.getElementById('editTitle').innerText = "CABANA " + id;
+            document.getElementById('f-status').value = data.status || 'free';
+            document.getElementById('f-guest').value = data.guest || '';
+            document.getElementById('f-room').value = data.room || '';
+            document.getElementById('f-board').value = data.board || '-';
+            document.getElementById('f-comment').value = data.comment || '';
+            
+            const sheet = document.getElementById('editSheet');
+            sheet.style.display = 'block';
+            setTimeout(() => sheet.classList.add('active'), 10);
+        }
+
+        function closeEdit() { 
+            const sheet = document.getElementById('editSheet');
+            sheet.classList.remove('active');
+            setTimeout(() => sheet.style.display = 'none', 300);
+        }
+
+        function saveToCloud() {
+            const newData = {
+                status: document.getElementById('f-status').value,
+                guest: document.getElementById('f-guest').value,
+                room: document.getElementById('f-room').value,
+                board: document.getElementById('f-board').value,
+                comment: document.getElementById('f-comment').value
+            };
+            db.ref('cabanas/' + activeCabanaId).set(newData);
+            closeEdit();
+        }
+
+        // --- СИНХРОНИЗАЦИЯ FIREBASE (Live Update) ---
+        db.ref('cabanas/').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                for(let id in data) {
+                    cabanasState[id] = data[id];
+                    const card = document.getElementById('c-'+id);
+                    if(card) {
+                        // Обновляем вид карточки (видны сразу)
+                        card.className = 'cabana-card card-' + data[id].status;
+                        document.getElementById('dot-'+id).style.background = 'var(--status-'+data[id].status+')';
+                        document.getElementById('g-'+id).innerText = data[id].guest || '-';
+                        document.getElementById('r-'+id).innerText = data[id].room || '-';
+                        
+                        // Тип питания (акцент)
+                        const boardTag = document.getElementById('b-'+id);
+                        if(data[id].board && data[id].board !== '-') {
+                            boardTag.innerText = data[id].board;
+                            boardTag.style.display = 'block';
+                            boardTag.style.color = (data[id].board === 'AI') ? 'var(--lujo-orange)' : 'white';
+                        } else {
+                            boardTag.style.display = 'none';
+                        }
+                    }
+                }
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
