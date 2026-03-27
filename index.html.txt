@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LUJO BODRUM | Cabana Booking by Gulzada</title>
+    
+    <style>
+        :root {
+            --lujo-orange: #FF6A00;
+            --lujo-dark: #0f0f0f;
+            --lujo-card: rgba(26, 26, 26, 0.95);
+            --available: #2ecc71;
+            --occupied: var(--lujo-orange);
+            --maintenance: #e74c3c;
+            --white: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Avenir', sans-serif;
+            background-color: var(--lujo-dark);
+            background-image: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('lujo-beach.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--white);
+            min-height: 100vh;
+        }
+
+        /* Кнопка Инфо */
+        .info-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 35px;
+            height: 35px;
+            border: 1px solid white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 100;
+            font-weight: bold;
+        }
+
+        /* Модальное окно (Инфо) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 200;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .modal-content {
+            max-width: 400px;
+            margin: 0 auto;
+            border: 1px solid var(--lujo-orange);
+            padding: 25px;
+            border-radius: 15px;
+            background: var(--lujo-dark);
+        }
+
+        .color-example {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .dot {
+            width: 15px; height: 15px; border-radius: 50%; margin-right: 15px;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .hero h1 { font-size: 2.4rem; letter-spacing: 6px; margin-bottom: 5px; text-transform: uppercase; }
+        .hero h1 span { color: var(--lujo-orange); }
+        .by-line { font-size: 0.85rem; letter-spacing: 3px; margin-bottom: 45px; opacity: 0.8; text-transform: uppercase; }
+
+        .btn-main {
+            background-color: var(--lujo-orange);
+            color: white;
+            padding: 22px 50px;
+            border: none;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .zones-container { padding: 20px; display: none; }
+        .cabana-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 15px; margin-top: 25px; }
+        
+        .card { background: var(--lujo-card); border-radius: 12px; padding: 18px; border-left: 5px solid var(--available); }
+        .card.occupied { border-left-color: var(--occupied); }
+        .card h3 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--lujo-orange); }
+        .info-label { font-size: 0.7rem; color: #888; margin-top: 10px; text-transform: uppercase; }
+        .info-data { font-size: 0.95rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="info-btn" onclick="toggleModal(true)">i</div>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: var(--lujo-orange);">INFORMATION</h2>
+            <p style="font-size: 0.9rem; line-height: 1.5;">This system is designed to track cabana bookings in real-time. You can check availability and current guest status.</p>
+            <hr style="border: 0.5px solid #333; margin: 20px 0;">
+            
+            <div class="color-example"><div class="dot" style="background: var(--available);"></div> Available for booking</div>
+            <div class="color-example"><div class="dot" style="background: var(--occupied);"></div> Occupied by guests</div>
+            <div class="color-example"><div class="dot" style="background: var(--maintenance);"></div> Out of order / Maintenance</div>
+            
+            <button onclick="toggleModal(false)" style="margin-top: 20px; background: none; border: 1px solid white; color: white; padding: 10px 20px; border-radius: 20px;">CLOSE</button>
+        </div>
+    </div>
+
+    <div id="home-screen" class="hero">
+        <h1>LUJO <span>BODRUM</span></h1>
+        <div class="by-line">Cabana Booking by Gulzada</div>
+        <button class="btn-main" onclick="openBooking()">Choose your cabana zone</button>
+    </div>
+
+    <div id="booking-screen" class="zones-container">
+        <button onclick="goBack()" style="background:none; color:white; border:1px solid white; padding:8px 18px; border-radius:20px; font-size: 0.75rem;">← BACK</button>
+        <h2 style="text-align:center; letter-spacing:5px; margin-top: 25px; text-transform: uppercase;">Joy Stone Zone</h2>
+        
+        <div class="cabana-grid">
+            <div class="card">
+                <h3>CABANA № 01</h3>
+                <div class="info-label">Guest Room:</div>
+                <div class="info-data">Available</div>
+                <div class="info-label">Pension Type:</div>
+                <div class="info-data">BB / AI</div>
+            </div>
+            <div class="card occupied">
+                <h3>CABANA № 02</h3>
+                <div class="info-label">Guest Room:</div>
+                <div class="info-data">Room 2204</div>
+                <div class="info-label">Pension Type:</div>
+                <div class="info-data">All Inclusive</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal(show) {
+            document.getElementById('infoModal').style.display = show ? 'block' : 'none';
+        }
+        function openBooking() {
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('booking-screen').style.display = 'block';
+        }
+        function goBack() {
+            document.getElementById('home-screen').style.display = 'flex';
+            document.getElementById('booking-screen').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
