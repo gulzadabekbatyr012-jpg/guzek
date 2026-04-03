@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guzek’s Secret Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(160deg, #ffe6f3, #ffd2ea);
+    position: relative;
+    color: #7a4b63;
+}
+body::before {
+    content: "🌸 🌸 🌸 🌸 🌸 🌸 🌸 🌸";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 50px;
+    opacity: 0.08;
+    pointer-events: none;
+    white-space: pre;
+}
+.container {text-align:center; margin-top:50px;}
+.title {font-family:'Pacifico', cursive; font-size:50px; color:#ff6fbf; text-shadow:0 0 10px white;}
+.menu {margin-top:25px; display:flex; flex-direction:column; gap:20px; align-items:center;}
+.btn {background:linear-gradient(145deg,#ffc0e8,#ffb3de); border:none; padding:15px 35px; color:#7a4b63; border-radius:15px; font-size:22px; box-shadow:0 5px 15px rgba(255,192,232,0.5); width:240px; cursor:pointer; transition:all 0.3s ease;}
+.btn:hover {transform:scale(1.05); box-shadow:0 8px 20px rgba(255,192,232,0.7);}
+.page {padding:20px; animation:fade 0.5s ease;}
+.hidden {display:none;}
+.subtitle {text-align:center; font-size:32px; color:#ff8ac4; margin-bottom:25px; font-family:'Pacifico', cursive;}
+.form input, .form textarea, .form select {width:95%; padding:12px; margin-bottom:12px; background:#ffe4f3; border:1px solid #ffb1d6; border-radius:12px; font-size:16px;}
+textarea {min-height:80px;}
+.bigNotes {width:100%; height:300px; background:#ffe4f3; border:1px solid #ffb1d6; border-radius:15px; padding:12px; font-size:16px;}
+.backBtn {background:linear-gradient(145deg,#ffd6f0,#ffc4e5); border:none; padding:12px 25px; border-radius:15px; display:block; margin:20px auto; cursor:pointer; font-size:18px; box-shadow:0 4px 12px rgba(255,198,225,0.5); transition:all 0.3s ease;}
+.backBtn:hover {transform:scale(1.05); box-shadow:0 6px 18px rgba(255,198,225,0.7);}
+#guestList {display:flex; flex-direction:column; gap:18px;}
+.guestCard {background:#ffe7f2; padding:18px; border:1px solid #ffb1d6; border-radius:15px; box-shadow:0 0 10px #ffd6ec; font-size:16px; position:relative;}
+.deleteBtn {position:absolute; top:10px; right:10px; background:#ff8aa0; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-weight:bold; color:white;}
+.editBtn {position:absolute; top:10px; right:50px; background:#ffa3c1; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-weight:bold; color:white;}
+.stickers {margin-top:5px;}
+.sticker {cursor:pointer; font-size:24px; margin-right:5px;}
+#searchInput {width:95%; padding:12px; margin-bottom:15px; border:1px solid #ffb1d6; border-radius:12px; background:#ffe4f3; font-size:16px;}
+.zoneColors {Escape:'#ffd1dc', Lotus:'#ffe4f0', Joystone:'#e6d0ff'}
+</style>
+</head>
+<body>
+<div class="container">
+<h1 class="title">Guzek’s Secret Notes</h1>
+<div class="menu">
+<button onclick="showPage('guestsPage')" class="btn">Гости</button>
+<button onclick="showPage('addGuestPage')" class="btn">Добавить гостя</button>
+<button onclick="showPage('notesPage')" class="btn">Мои заметки</button>
+</div>
+</div>
+
+<div id="guestsPage" class="page hidden">
+<h2 class="subtitle">Список гостей</h2>
+<input type="text" id="searchInput" placeholder="Поиск по номеру комнаты" oninput="searchGuest()">
+<div id="guestList"></div>
+<button class="backBtn" onclick="goHome()">Назад</button>
+</div>
+
+<div id="addGuestPage" class="page hidden">
+<h2 class="subtitle">Добавить гостя</h2>
+<div class="form">
+<input id="room" placeholder="Номер комнаты">
+<input id="name" placeholder="Имя гостя">
+<select id="zone">
+<option value="Escape">Escape</option>
+<option value="Lotus">Lotus</option>
+<option value="Joystone">Joystone</option>
+</select>
+<textarea id="preferences" placeholder="Предпочтения"></textarea>
+<textarea id="notes" placeholder="Личные заметки"></textarea>
+<div class="stickers">
+<span class="sticker" onclick="addSticker('🌸')">🌸</span>
+<span class="sticker" onclick="addSticker('🍹')">🍹</span>
+<span class="sticker" onclick="addSticker('🎵')">🎵</span>
+<span class="sticker" onclick="addSticker('✨')">✨</span>
+</div>
+<button class="btn" onclick="addGuest()">Сохранить</button>
+</div>
+<button class="backBtn" onclick="goHome()">Назад</button>
+</div>
+
+<div id="notesPage" class="page hidden">
+<h2 class="subtitle">Мои секретные заметки</h2>
+<textarea id="myNotes" class="bigNotes" placeholder="Твои секреты, мысли, кто бесит, настроение..."></textarea>
+<button class="btn" onclick="saveMyNotes()">Сохранить</button>
+<button class="backBtn" onclick="goHome()">Назад</button>
+</div>
+
+<script>
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden')); document.getElementById(id).classList.remove('hidden');}
+function goHome(){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));}
+
+let guests=JSON.parse(localStorage.getItem("guests")||"[]");
+let currentStickers="";
+
+function addSticker(s){currentStickers+=s; document.getElementById("notes").value+=s;}
+
+function addGuest(){
+let guest={id:Date.now(), room:document.getElementById("room").value, name:document.getElementById("name").value, zone:document.getElementById("zone").value, preferences:document.getElementById("preferences").value, notes:document.getElementById("notes").value, date:new Date().toLocaleString()};
+guests.push(guest); localStorage.setItem("guests",JSON.stringify(guests)); currentStickers=""; alert("Гость добавлен 💗"); renderGuests(); document.getElementById("room").value=""; document.getElementById("name").value=""; document.getElementById("preferences").value=""; document.getElementById("notes").value="";}
+function renderGuests(){
+let list=document.getElementById("guestList"); list.innerHTML=""; guests.forEach(g=>{
+let card=document.createElement("div"); card.className="guestCard"; card.style.backgroundColor=g.zone==='Escape'?'#ffd1dc':g.zone==='Lotus'?'#ffe4f0':'#e6d0ff';
+card.innerHTML=`<strong>Комната:</strong> ${g.room} <br><strong>Имя:</strong> ${g.name} <br><strong>Зона:</strong> ${g.zone} <br><strong>Дата:</strong> ${g.date} <br><strong>Предпочтения:</strong> ${g.preferences} <br><strong>Заметки:</strong> ${g.notes} <button class="editBtn" onclick="editGuest(${g.id})">✎</button> <button class="deleteBtn" onclick="deleteGuest(${g.id})">×</button>`;
+list.appendChild(card);
+});}
+function deleteGuest(id){if(confirm("Удалить эту запись?")){guests=guests.filter(g=>g.id!==id); localStorage.setItem("guests",JSON.stringify(guests)); renderGuests();}}
+function editGuest(id){let g=guests.find(g=>g.id===id); if(g){document.getElementById("room").value=g.room; document.getElementById("name").value=g.name; document.getElementById("zone").value=g.zone; document.getElementById("preferences").value=g.preferences; document.getElementById("notes").value=g.notes; deleteGuest(id); showPage('addGuestPage');}}
+function searchGuest(){let query=document.getElementById("searchInput").value.toLowerCase(); document.querySelectorAll('.guestCard').forEach(card=>{card.style.display=card.innerHTML.toLowerCase().includes(query)?'block':'none';});}
+
+renderGuests();
+document.getElementById("myNotes").value=localStorage.getItem("myNotes")||"";
+function saveMyNotes(){localStorage.setItem("myNotes",document.getElementById("myNotes").value); alert("Заметки сохранены 💗");}
+
+</script>
+</body>
+</html>
